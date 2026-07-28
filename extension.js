@@ -114,17 +114,50 @@ export default class NightLightSliderExtension extends Extension {
         this._indicator.quickSettingsItems.push(this._slider);
 
         const quickSettings = Main.panel.statusArea.quickSettings;
-        quickSettings._indicators.add_child(this._indicator);
 
+        // Public entry point: adds the panel indicator and puts the slider in
+        // the slot reserved for external items, ahead of the background apps.
+        quickSettings.addExternalIndicator(this._indicator, 2);
+
+        // Then move it under Brightness. At login the shell is still filling
+        // the grid from its async _setupIndicators(), so the brightness item
+        // is not a child yet and there is nothing to anchor to. Retry when the
+        // menu is first opened -- by then the grid is always populated, and the
+        // user cannot have seen the menu before that.
+        this._placed = false;
+        if (!this._placeUnderBrightness(quickSettings)) {
+            this._openStateId = quickSettings.menu.connect('open-state-changed',
+                (menu, isOpen) => {
+                    if (isOpen)
+                        this._placeUnderBrightness(quickSettings);
+                });
+        }
+    }
+
+    // Reordering needs private internals, so it stays best effort: if the shell
+    // renames them the slider simply keeps the position addExternalIndicator()
+    // gave it, which is where external items are meant to go anyway.
+    _placeUnderBrightness(quickSettings) {
+        if (this._placed)
+            return true;
+
+        const grid = quickSettings.menu._grid;
         const brightness = quickSettings._brightness?.quickSettingsItems?.[0];
-        const children = quickSettings.menu._grid.get_children();
-        const index = brightness ? children.indexOf(brightness) : -1;
-        const sibling = index >= 0 ? children[index + 1] ?? null : null;
+        if (!grid || !brightness || brightness.get_parent() !== grid)
+            return false;
 
-        quickSettings.menu.insertItemBefore(this._slider, sibling, 2);
+        grid.set_child_above_sibling(this._slider, brightness);
+        this._placed = true;
+        return true;
     }
 
     disable() {
+        if (this._openStateId) {
+            Main.panel.statusArea.quickSettings?.menu.disconnect(this._openStateId);
+            this._openStateId = null;
+        }
+        this._placed = false;
+
         this._slider?.destroy();
         this._slider = null;
 
