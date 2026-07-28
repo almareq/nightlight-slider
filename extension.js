@@ -28,7 +28,11 @@ const SCHEMA = 'org.gnome.settings-daemon.plugins.color';
 const TEMP_KEY = 'night-light-temperature';
 const ENABLED_KEY = 'night-light-enabled';
 
-// Range enforced by gnome-settings-daemon's colour plugin.
+// Matches the range and inverted direction of the Colour Temperature slider in
+// Settings, so both show the same position for a given value. Nothing enforces
+// this: the GSettings key is a plain uint with no range, and gnome-settings-
+// daemon clamps to a much wider band. A value set outside it by other means
+// just pins the slider at one end.
 const MIN_KELVIN = 1700;
 const MAX_KELVIN = 4700;
 
