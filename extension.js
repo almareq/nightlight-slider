@@ -113,6 +113,7 @@ class NightLightSlider extends QuickSlider {
 
         this._syncSlider();
         this._syncIcon();
+        this._syncA11y();
     }
 
     _toValue(kelvin) {
@@ -144,12 +145,27 @@ class NightLightSlider extends QuickSlider {
             ? ICON_ON : ICON_OFF;
     }
 
+    // The slider reports its position to assistive tech as a bare 0-1 fraction,
+    // and the scale is inverted, so the number climbs as the temperature falls.
+    // Put the reading itself in the description, which is read on focus rather
+    // than on every step.
+    _syncA11y() {
+        const kelvin = this._toKelvin(this.slider.value);
+        this.slider.get_accessible()?.set_description(
+            /* Translators: %d is a colour temperature in Kelvin. Dragging
+               right lowers it, which warms the screen. */
+            _('%d K, warmer towards the right').format(kelvin));
+    }
+
     // A drag emits a notify::value per motion event -- around 60 for one sweep
     // of the bar. Writing each one rewrites the dconf database and broadcasts
     // changed:: to every listener on the schema. Write on the first movement so
     // the response is immediate, then at most once per interval, and always
     // flush the value the drag came to rest on.
     _onSliderChanged() {
+        // Runs for external changes too, since _syncSlider moves the handle.
+        this._syncA11y();
+
         if (this._blockWrite)
             return;
 

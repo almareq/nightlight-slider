@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Night Light Slider\n"
 "Report-Msgid-Bugs-To: https://github.com/almareq/nightlight-slider/issues\n"
-"POT-Creation-Date: 2026-07-28 19:37+0200\n"
+"POT-Creation-Date: 2026-07-28 20:12+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,10 +17,17 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: extension.js:65
+#: extension.js:68
 msgid "Toggle Night Light"
 msgstr ""
 
-#: extension.js:68
+#: extension.js:71
 msgid "Night Light Temperature"
+msgstr ""
+
+#. Translators: %d is a colour temperature in Kelvin. Dragging
+#. right lowers it, which warms the screen.
+#: extension.js:157
+#, javascript-format
+msgid "%d K, warmer towards the right"
 msgstr ""
