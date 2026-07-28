@@ -78,7 +78,11 @@ class NightLightSlider extends QuickSlider {
             this._settings.set_boolean(ENABLED_KEY, !this._settings.get_boolean(ENABLED_KEY));
         });
 
-        global.backend.get_monitor_manager().bind_property(
+        // The monitor manager outlives this slider, and a binding keeps writing
+        // to its target for as long as that target is referenced -- which, after
+        // destroy(), is until the collector gets to it. Hold on to the binding
+        // so it can be dropped deterministically instead.
+        this._supportedBinding = global.backend.get_monitor_manager().bind_property(
             'night-light-supported', this, 'visible',
             GObject.BindingFlags.SYNC_CREATE);
 
@@ -137,6 +141,9 @@ class NightLightSlider extends QuickSlider {
     }
 
     destroy() {
+        this._supportedBinding?.unbind();
+        this._supportedBinding = null;
+
         this._cancellable?.cancel();
         this._cancellable = null;
         this._colorProxy = null;
