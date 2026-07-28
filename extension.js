@@ -22,7 +22,7 @@ import GObject from 'gi://GObject';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {QuickSlider, SystemIndicator} from 'resource:///org/gnome/shell/ui/quickSettings.js';
-import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
+import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 const SCHEMA = 'org.gnome.settings-daemon.plugins.color';
 const TEMP_KEY = 'night-light-temperature';
@@ -52,9 +52,10 @@ const COLOR_IFACE = `
 
 // night-light-enabled being true does not mean the screen is actually tinted:
 // a schedule (automatic by default) or DisabledUntilTomorrow can hold it off.
-// Preview so dragging always shows an effect, as Settings does, with the same
-// duration it uses.
-const PREVIEW_SECONDS = 5;
+// Preview so dragging always shows an effect, as Settings does. Every write
+// restarts the preview, so this only governs how long the tint lingers after
+// the drag stops.
+const PREVIEW_SECONDS = 2;
 
 // Upper bound on how often a drag is allowed to write. 10Hz still looks smooth.
 const WRITE_INTERVAL_MS = 100;
@@ -65,10 +66,7 @@ class NightLightSlider extends QuickSlider {
         super._init({
             iconName: ICON_ON,
             iconReactive: true,
-            iconLabel: _('Toggle Night Light'),
         });
-
-        this.slider.accessible_name = _('Night Light Temperature');
 
         // Drag bookkeeping. _blockWrite marks a handle move this slider caused
         // itself, so the change echoing back from GSettings is not read as the
@@ -113,7 +111,6 @@ class NightLightSlider extends QuickSlider {
 
         this._syncSlider();
         this._syncIcon();
-        this._syncA11y();
     }
 
     _toValue(kelvin) {
@@ -145,27 +142,12 @@ class NightLightSlider extends QuickSlider {
             ? ICON_ON : ICON_OFF;
     }
 
-    // The slider reports its position to assistive tech as a bare 0-1 fraction,
-    // and the scale is inverted, so the number climbs as the temperature falls.
-    // Put the reading itself in the description, which is read on focus rather
-    // than on every step.
-    _syncA11y() {
-        const kelvin = this._toKelvin(this.slider.value);
-        this.slider.get_accessible()?.set_description(
-            /* Translators: %d is a colour temperature in Kelvin. Dragging
-               right lowers it, which warms the screen. */
-            _('%d K, warmer towards the right').format(kelvin));
-    }
-
     // A drag emits a notify::value per motion event -- around 60 for one sweep
     // of the bar. Writing each one rewrites the dconf database and broadcasts
     // changed:: to every listener on the schema. Write on the first movement so
     // the response is immediate, then at most once per interval, and always
     // flush the value the drag came to rest on.
     _onSliderChanged() {
-        // Runs for external changes too, since _syncSlider moves the handle.
-        this._syncA11y();
-
         if (this._blockWrite)
             return;
 
