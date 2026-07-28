@@ -1,5 +1,2 @@
-# Build artifact: regenerate with `make` (glib-compile-schemas schemas/)
-schemas/gschemas.compiled
-
 # Editors
 .idea/

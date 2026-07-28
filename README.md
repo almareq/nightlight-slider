@@ -25,59 +25,13 @@ ones Settings -> Displays uses. Changes made here show up there and vice versa.
 
 ## Requirements
 
-- GNOME Shell 50. `metadata.json` pins `shell-version` to `["50"]`, and the
-  shell refuses to load the extension on anything else.
-- `glib-compile-schemas`, from `libglib2.0-bin` on Debian/Ubuntu
-  (`glib2-devel` on Fedora), to build the settings schema.
+GNOME Shell 50. The shell refuses to load the extension on anything else.
 
 ## Install
 
-The compiled schema is a build artifact and is not in the repository, so build
-it before installing:
-
-```sh
-make
-ln -s "$PWD" ~/.local/share/gnome-shell/extensions/nightlight-slider@almareq.github.io
-```
-
-Then log out and back in (see [Development](#development)) and enable it:
-
-```sh
-gnome-extensions enable nightlight-slider@almareq.github.io
-```
-
-Use `cp -r` instead of `ln -s` if you would rather not have the installed
-extension track your working tree.
-
-## Configuration
-
-There is no preferences dialog, so the Extensions app shows no settings button.
-The two icon keys are set from the command line. The schema is not installed
-system-wide, so `--schemadir` is required:
-
-```sh
-SCHEMADIR=~/.local/share/gnome-shell/extensions/nightlight-slider@almareq.github.io/schemas
-
-# icon shown while night light is on
-gsettings --schemadir "$SCHEMADIR" set \
-  org.gnome.shell.extensions.nightlight-slider icon-on weather-clear-night-symbolic
-
-# icon shown while night light is off
-gsettings --schemadir "$SCHEMADIR" set \
-  org.gnome.shell.extensions.nightlight-slider icon-off night-light-disabled-symbolic
-```
-
-Both default to `weather-clear-night-symbolic`, since the off state is already
-conveyed by dimming. Any symbolic icon name from the active icon theme works.
-Changes apply immediately, without restarting the session.
+[tbd]
 
 ## Development
-
-Rebuild the schema after editing `schemas/*.gschema.xml`:
-
-```sh
-make
-```
 
 Watch for errors:
 

@@ -31,34 +31,27 @@ const ENABLED_KEY = 'night-light-enabled';
 const MIN_KELVIN = 1700;
 const MAX_KELVIN = 4700;
 
+// The same icon is used in both states; on/off is conveyed by dimming.
+const ICON_NAME = 'weather-clear-night-symbolic';
+
 // Matches the shell's own ~50% treatment for insensitive widgets.
 const DIM_OPACITY = 128;
 
 const NightLightSlider = GObject.registerClass(
 class NightLightSlider extends QuickSlider {
-    // iconSettings holds this extension's own icon-on / icon-off keys, so the
-    // icons can be changed with `gsettings set` without a session restart.
-    _init(iconSettings) {
+    _init() {
         super._init({
-            // Placeholder so the St.Icon is built with a valid name;
-            // _syncState() below picks the right one for the current state.
-            iconName: iconSettings.get_string('icon-on'),
+            iconName: ICON_NAME,
             iconReactive: true,
             iconLabel: 'Toggle Night Light',
         });
 
         this.slider.accessible_name = 'Night Light Temperature';
 
-        this._iconSettings = iconSettings;
-        this._iconIds = [
-            iconSettings.connect('changed::icon-on', () => this._syncState()),
-            iconSettings.connect('changed::icon-off', () => this._syncState()),
-        ];
-
         this._settings = new Gio.Settings({schema_id: SCHEMA});
         this._settingsIds = [
             this._settings.connect(`changed::${TEMP_KEY}`, () => this._syncSlider()),
-            this._settings.connect(`changed::${ENABLED_KEY}`, () => this._syncState()),
+            this._settings.connect(`changed::${ENABLED_KEY}`, () => this._syncIconDim()),
         ];
 
         this.slider.connect('notify::value', () => this._onSliderChanged());
@@ -73,7 +66,7 @@ class NightLightSlider extends QuickSlider {
             GObject.BindingFlags.SYNC_CREATE);
 
         this._syncSlider();
-        this._syncState();
+        this._syncIconDim();
     }
 
     // Slider runs cool -> warm, so 1.0 is the *lowest* colour temperature.
@@ -95,14 +88,12 @@ class NightLightSlider extends QuickSlider {
         this._blockWrite = false;
     }
 
-    _syncState() {
+    // Dim only the icon, never the slider. The slider stays fully live while
+    // night light is off so that dragging it both re-enables night light and
+    // sets the temperature in one gesture -- see _onSliderChanged().
+    _syncIconDim() {
         const on = this._settings.get_boolean(ENABLED_KEY);
 
-        this.iconName = this._iconSettings.get_string(on ? 'icon-on' : 'icon-off');
-
-        // Dim only the icon, never the slider. The slider stays fully live while
-        // night light is off so that dragging it both re-enables night light and
-        // sets the temperature in one gesture -- see _onSliderChanged().
         const iconButton = this._iconButton ?? this.get_child()?.get_first_child();
         if (iconButton)
             iconButton.opacity = on ? 255 : DIM_OPACITY;
@@ -126,10 +117,6 @@ class NightLightSlider extends QuickSlider {
         this._settingsIds = null;
         this._settings = null;
 
-        this._iconIds?.forEach(id => this._iconSettings.disconnect(id));
-        this._iconIds = null;
-        this._iconSettings = null;
-
         this.menu?.destroy();
         super.destroy();
     }
@@ -138,7 +125,7 @@ class NightLightSlider extends QuickSlider {
 export default class NightLightSliderExtension extends Extension {
     enable() {
         this._indicator = new SystemIndicator();
-        this._slider = new NightLightSlider(this.getSettings());
+        this._slider = new NightLightSlider();
         this._indicator.quickSettingsItems.push(this._slider);
 
         const quickSettings = Main.panel.statusArea.quickSettings;
