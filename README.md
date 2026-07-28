@@ -18,12 +18,13 @@ Settings → Displays → Night Light → you are finally at the slider.
 
 ## Requirements
 
-GNOME Shell 48, 49 or 50.
+GNOME Shell 50.
 
 ## Install
 
-[tbd]
+symlink from the gnome extension folder.
 
-## License
+## Similar extensions
 
-GPL-2.0-or-later. See [LICENSE](LICENSE).
+There is an extension that does the same for Ubuntu 26 https://extensions.gnome.org/extension/6781/night-light-slider-updated.
+I leave the intention to publish this extension for this very reason.
