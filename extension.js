@@ -28,11 +28,6 @@ const SCHEMA = 'org.gnome.settings-daemon.plugins.color';
 const TEMP_KEY = 'night-light-temperature';
 const ENABLED_KEY = 'night-light-enabled';
 
-// Matches the range and inverted direction of the Colour Temperature slider in
-// Settings, so both show the same position for a given value. Nothing enforces
-// this: the GSettings key is a plain uint with no range, and gnome-settings-
-// daemon clamps to a much wider band. A value set outside it by other means
-// just pins the slider at one end.
 const MIN_KELVIN = 1700;
 const MAX_KELVIN = 4700;
 
@@ -50,14 +45,8 @@ const COLOR_IFACE = `
   </interface>
 </node>`;
 
-// night-light-enabled being true does not mean the screen is actually tinted:
-// a schedule (automatic by default) or DisabledUntilTomorrow can hold it off.
-// Preview so dragging always shows an effect, as Settings does. Every write
-// restarts the preview, so this only governs how long the tint lingers after
-// the drag stops.
 const PREVIEW_SECONDS = 2;
 
-// Upper bound on how often a drag is allowed to write. 10Hz still looks smooth.
 const WRITE_INTERVAL_MS = 100;
 
 const NightLightSlider = GObject.registerClass(
@@ -68,9 +57,6 @@ class NightLightSlider extends QuickSlider {
             iconReactive: true,
         });
 
-        // Drag bookkeeping. _blockWrite marks a handle move this slider caused
-        // itself, so the change echoing back from GSettings is not read as the
-        // user dragging; the other two bound how often that write happens.
         this._blockWrite = false;
         this._throttleId = null;
         this._pendingWrite = false;
@@ -86,10 +72,6 @@ class NightLightSlider extends QuickSlider {
             this._settings.set_boolean(ENABLED_KEY, !this._settings.get_boolean(ENABLED_KEY));
         });
 
-        // The monitor manager outlives this slider, and a binding keeps writing
-        // to its target for as long as that target is referenced -- which, after
-        // destroy(), is until the collector gets to it. Hold on to the binding
-        // so it can be dropped deterministically instead.
         this._supportedBinding = global.backend.get_monitor_manager().bind_property(
             'night-light-supported', this, 'visible',
             GObject.BindingFlags.SYNC_CREATE);
@@ -122,9 +104,6 @@ class NightLightSlider extends QuickSlider {
     }
 
     _syncSlider() {
-        // While a drag is being throttled the key trails the handle, so acting
-        // on a change here would drag the handle back to a value the user has
-        // already moved past. The drag wins; the final write reconciles them.
         if (this._throttleId)
             return;
 
@@ -142,11 +121,6 @@ class NightLightSlider extends QuickSlider {
             ? ICON_ON : ICON_OFF;
     }
 
-    // A drag emits a notify::value per motion event -- around 60 for one sweep
-    // of the bar. Writing each one rewrites the dconf database and broadcasts
-    // changed:: to every listener on the schema. Write on the first movement so
-    // the response is immediate, then at most once per interval, and always
-    // flush the value the drag came to rest on.
     _onSliderChanged() {
         if (this._blockWrite)
             return;
@@ -206,15 +180,8 @@ export default class NightLightSliderExtension extends Extension {
 
         const quickSettings = Main.panel.statusArea.quickSettings;
 
-        // Public entry point: adds the panel indicator and puts the slider in
-        // the slot reserved for external items, ahead of the background apps.
         quickSettings.addExternalIndicator(this._indicator, 2);
 
-        // Then move it under Brightness. At login the shell is still filling
-        // the grid from its async _setupIndicators(), so the brightness item
-        // is not a child yet and there is nothing to anchor to. Retry when the
-        // menu is first opened -- by then the grid is always populated, and the
-        // user cannot have seen the menu before that.
         this._placed = false;
         if (!this._placeUnderBrightness(quickSettings)) {
             this._openStateId = quickSettings.menu.connect('open-state-changed',
@@ -225,9 +192,6 @@ export default class NightLightSliderExtension extends Extension {
         }
     }
 
-    // Reordering needs private internals, so it stays best effort: if the shell
-    // renames them the slider simply keeps the position addExternalIndicator()
-    // gave it, which is where external items are meant to go anyway.
     _placeUnderBrightness(quickSettings) {
         if (this._placed)
             return true;
