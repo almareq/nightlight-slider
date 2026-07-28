@@ -31,8 +31,9 @@ const ENABLED_KEY = 'night-light-enabled';
 const MIN_KELVIN = 1700;
 const MAX_KELVIN = 4700;
 
-// The same icon is used in both states; on/off is conveyed by dimming.
-const ICON_NAME = 'weather-clear-night-symbolic';
+// Matches the shell's own night light indicator in the top bar. The same icon
+// is used in both states; on/off is conveyed by dimming.
+const ICON_NAME = 'night-light-symbolic';
 
 // Matches the shell's own ~50% treatment for insensitive widgets.
 const DIM_OPACITY = 128;
