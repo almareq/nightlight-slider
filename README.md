@@ -77,6 +77,29 @@ Two log lines that look alarming and are not: `unable to lock lockfile
 and `Failed to create file .../gnome-shell-disable-extensions: File exists` is
 a crash-guard marker the shell itself calls harmless.
 
+## Translating
+
+The two user-facing strings are both accessible names, read out by screen
+readers. The template is `po/nightlight-slider.pot`; refresh it after touching
+a string:
+
+```sh
+xgettext --from-code=UTF-8 --language=JavaScript --keyword=_ \
+  -o po/nightlight-slider.pot extension.js
+```
+
+To add a language and compile it where the shell will look:
+
+```sh
+msginit -i po/nightlight-slider.pot -l es -o po/es.po
+msgfmt -o locale/es/LC_MESSAGES/nightlight-slider.mo po/es.po
+```
+
+`locale/` is compiled output, but it is not disposable: the shell binds the
+gettext domain to that directory, so a release archive has to contain it or
+translations silently do nothing. Test one with `LANGUAGE=es` on a nested
+session.
+
 ## Compatibility
 
 Placing the slider under Brightness requires private shell internals

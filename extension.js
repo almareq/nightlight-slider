@@ -22,7 +22,7 @@ import GObject from 'gi://GObject';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {QuickSlider, SystemIndicator} from 'resource:///org/gnome/shell/ui/quickSettings.js';
-import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
+import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 const SCHEMA = 'org.gnome.settings-daemon.plugins.color';
 const TEMP_KEY = 'night-light-temperature';
@@ -62,10 +62,10 @@ class NightLightSlider extends QuickSlider {
         super._init({
             iconName: ICON_ON,
             iconReactive: true,
-            iconLabel: 'Toggle Night Light',
+            iconLabel: _('Toggle Night Light'),
         });
 
-        this.slider.accessible_name = 'Night Light Temperature';
+        this.slider.accessible_name = _('Night Light Temperature');
 
         this._settings = new Gio.Settings({schema_id: SCHEMA});
         this._settingsIds = [
@@ -170,7 +170,7 @@ export default class NightLightSliderExtension extends Extension {
         this._placed = false;
         if (!this._placeUnderBrightness(quickSettings)) {
             this._openStateId = quickSettings.menu.connect('open-state-changed',
-                (_, isOpen) => {
+                (_menu, isOpen) => {
                     if (isOpen)
                         this._placeUnderBrightness(quickSettings);
                 });

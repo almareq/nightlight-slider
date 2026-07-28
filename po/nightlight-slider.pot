@@ -1,0 +1,26 @@
+# Translation template for Night Light Slider.
+# Copyright (C) 2026 Alvaro Martin
+# This file is distributed under the same license as the Night Light Slider package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Night Light Slider\n"
+"Report-Msgid-Bugs-To: https://github.com/almareq/nightlight-slider/issues\n"
+"POT-Creation-Date: 2026-07-28 19:37+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: extension.js:65
+msgid "Toggle Night Light"
+msgstr ""
+
+#: extension.js:68
+msgid "Night Light Temperature"
+msgstr ""
