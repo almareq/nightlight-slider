@@ -17,6 +17,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
@@ -33,6 +34,23 @@ const MAX_KELVIN = 4700;
 
 const ICON_ON = 'night-light-symbolic';
 const ICON_OFF = 'night-light-disabled-symbolic';
+
+const COLOR_BUS_NAME = 'org.gnome.SettingsDaemon.Color';
+const COLOR_OBJECT_PATH = '/org/gnome/SettingsDaemon/Color';
+const COLOR_IFACE = `
+<node>
+  <interface name="org.gnome.SettingsDaemon.Color">
+    <method name="NightLightPreview">
+      <arg type="u" name="duration" direction="in"/>
+    </method>
+  </interface>
+</node>`;
+
+// night-light-enabled being true does not mean the screen is actually tinted:
+// a schedule (automatic by default) or DisabledUntilTomorrow can hold it off.
+// Preview so dragging always shows an effect, as Settings does, with the same
+// duration it uses.
+const PREVIEW_SECONDS = 5;
 
 const NightLightSlider = GObject.registerClass(
 class NightLightSlider extends QuickSlider {
@@ -59,6 +77,21 @@ class NightLightSlider extends QuickSlider {
         global.backend.get_monitor_manager().bind_property(
             'night-light-supported', this, 'visible',
             GObject.BindingFlags.SYNC_CREATE);
+
+        const colorInfo = Gio.DBusInterfaceInfo.new_for_xml(COLOR_IFACE);
+        this._cancellable = new Gio.Cancellable();
+        this._colorProxy = new Gio.DBusProxy({
+            g_connection: Gio.DBus.session,
+            g_name: COLOR_BUS_NAME,
+            g_object_path: COLOR_OBJECT_PATH,
+            g_interface_name: colorInfo.name,
+            g_interface_info: colorInfo,
+        });
+        this._colorProxy.init_async(GLib.PRIORITY_DEFAULT, this._cancellable)
+            .catch(e => {
+                if (!e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
+                    console.error(`Night Light Slider: ${e.message}`);
+            });
 
         this._syncSlider();
         this._syncIcon();
@@ -94,10 +127,16 @@ class NightLightSlider extends QuickSlider {
         if (!this._settings.get_boolean(ENABLED_KEY))
             this._settings.set_boolean(ENABLED_KEY, true);
 
+        this._colorProxy?.NightLightPreviewAsync(PREVIEW_SECONDS).catch(() => {});
+
         this._settings.set_uint(TEMP_KEY, this._toKelvin(this.slider.value));
     }
 
     destroy() {
+        this._cancellable?.cancel();
+        this._cancellable = null;
+        this._colorProxy = null;
+
         this._settingsIds?.forEach(id => this._settings.disconnect(id));
         this._settingsIds = null;
         this._settings = null;
@@ -127,7 +166,7 @@ export default class NightLightSliderExtension extends Extension {
         this._placed = false;
         if (!this._placeUnderBrightness(quickSettings)) {
             this._openStateId = quickSettings.menu.connect('open-state-changed',
-                (menu, isOpen) => {
+                (_, isOpen) => {
                     if (isOpen)
                         this._placeUnderBrightness(quickSettings);
                 });
