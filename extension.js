@@ -70,6 +70,13 @@ class NightLightSlider extends QuickSlider {
 
         this.slider.accessible_name = _('Night Light Temperature');
 
+        // Drag bookkeeping. _blockWrite marks a handle move this slider caused
+        // itself, so the change echoing back from GSettings is not read as the
+        // user dragging; the other two bound how often that write happens.
+        this._blockWrite = false;
+        this._throttleId = null;
+        this._pendingWrite = false;
+
         this._settings = new Gio.Settings({schema_id: SCHEMA});
         this._settingsIds = [
             this._settings.connect(`changed::${TEMP_KEY}`, () => this._syncSlider()),
