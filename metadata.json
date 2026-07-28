@@ -3,5 +3,5 @@
   "name": "Night Light Slider",
   "description": "Adds a night light colour-temperature slider to the quick settings menu. Drag or scroll to warm/cool the screen; click the icon to toggle night light on and off.",
   "shell-version": ["50"],
-  "version": 2
+  "version": 1
 }
