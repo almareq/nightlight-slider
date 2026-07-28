@@ -1,7 +1,7 @@
 {
   "uuid": "nightlight-slider@almareq.github.io",
   "name": "Night Light Slider",
-  "description": "Adds a night light colour-temperature slider to the quick settings menu. Drag or scroll to warm/cool the screen; click the icon to toggle night light on and off.",
+  "description": "Adds a night light color-temperature slider to the quick settings menu. Adjust to warm/cool the screen; click the icon to toggle night light.",
   "shell-version": ["48", "49", "50"],
   "url": "https://github.com/almareq/nightlight-slider",
   "version": 1
