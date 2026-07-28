@@ -31,18 +31,14 @@ const ENABLED_KEY = 'night-light-enabled';
 const MIN_KELVIN = 1700;
 const MAX_KELVIN = 4700;
 
-// Matches the shell's own night light indicator in the top bar. The same icon
-// is used in both states; on/off is conveyed by dimming.
-const ICON_NAME = 'night-light-symbolic';
-
-// Matches the shell's own ~50% treatment for insensitive widgets.
-const DIM_OPACITY = 128;
+const ICON_ON = 'night-light-symbolic';
+const ICON_OFF = 'night-light-disabled-symbolic';
 
 const NightLightSlider = GObject.registerClass(
 class NightLightSlider extends QuickSlider {
     _init() {
         super._init({
-            iconName: ICON_NAME,
+            iconName: ICON_ON,
             iconReactive: true,
             iconLabel: 'Toggle Night Light',
         });
@@ -52,25 +48,22 @@ class NightLightSlider extends QuickSlider {
         this._settings = new Gio.Settings({schema_id: SCHEMA});
         this._settingsIds = [
             this._settings.connect(`changed::${TEMP_KEY}`, () => this._syncSlider()),
-            this._settings.connect(`changed::${ENABLED_KEY}`, () => this._syncIconDim()),
+            this._settings.connect(`changed::${ENABLED_KEY}`, () => this._syncIcon()),
         ];
 
         this.slider.connect('notify::value', () => this._onSliderChanged());
         this.connect('icon-clicked', () => {
-            this._settings.set_boolean(ENABLED_KEY,
-                !this._settings.get_boolean(ENABLED_KEY));
+            this._settings.set_boolean(ENABLED_KEY, !this._settings.get_boolean(ENABLED_KEY));
         });
 
-        // Hide the whole item on hardware that can't do night light at all.
         global.backend.get_monitor_manager().bind_property(
             'night-light-supported', this, 'visible',
             GObject.BindingFlags.SYNC_CREATE);
 
         this._syncSlider();
-        this._syncIconDim();
+        this._syncIcon();
     }
 
-    // Slider runs cool -> warm, so 1.0 is the *lowest* colour temperature.
     _toValue(kelvin) {
         return (MAX_KELVIN - kelvin) / (MAX_KELVIN - MIN_KELVIN);
     }
@@ -82,31 +75,22 @@ class NightLightSlider extends QuickSlider {
     _syncSlider() {
         const kelvin = this._settings.get_uint(TEMP_KEY);
         if (this._toKelvin(this.slider.value) === kelvin)
-            return; // already in sync; avoids fighting our own write
+            return;
 
         this._blockWrite = true;
         this.slider.value = this._toValue(kelvin);
         this._blockWrite = false;
     }
 
-    // Dim only the icon, never the slider. The slider stays fully live while
-    // night light is off so that dragging it both re-enables night light and
-    // sets the temperature in one gesture -- see _onSliderChanged().
-    _syncIconDim() {
-        const on = this._settings.get_boolean(ENABLED_KEY);
-
-        const iconButton = this._iconButton ?? this.get_child()?.get_first_child();
-        if (iconButton)
-            iconButton.opacity = on ? 255 : DIM_OPACITY;
+    _syncIcon() {
+        this.iconName = this._settings.get_boolean(ENABLED_KEY)
+            ? ICON_ON : ICON_OFF;
     }
 
     _onSliderChanged() {
         if (this._blockWrite)
             return;
 
-        // Touching the slider means you want to see the effect, so bring night
-        // light back on rather than silently storing a temperature that does
-        // nothing. This also un-dims the icon via the changed:: handler.
         if (!this._settings.get_boolean(ENABLED_KEY))
             this._settings.set_boolean(ENABLED_KEY, true);
 
@@ -132,13 +116,11 @@ export default class NightLightSliderExtension extends Extension {
         const quickSettings = Main.panel.statusArea.quickSettings;
         quickSettings._indicators.add_child(this._indicator);
 
-        // Sit directly below the Brightness slider rather than at the bottom.
         const brightness = quickSettings._brightness?.quickSettingsItems?.[0];
         const children = quickSettings.menu._grid.get_children();
         const index = brightness ? children.indexOf(brightness) : -1;
         const sibling = index >= 0 ? children[index + 1] ?? null : null;
 
-        // colSpan 2 matches the other full-width sliders.
         quickSettings.menu.insertItemBefore(this._slider, sibling, 2);
     }
 

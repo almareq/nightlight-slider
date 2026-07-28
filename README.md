@@ -11,17 +11,9 @@ Settings -> Displays -> Night Light -> you are finally at the slider.
 
 ## What it does
 
-- Drag or scroll the slider to warm or cool the screen (1700 K - 4700 K, the
-  range enforced by gnome-settings-daemon).
-- Click the icon to toggle night light on and off.
-- Dragging while night light is off turns it back on, so one gesture both
-  enables it and picks a temperature.
-- The off state is shown by dimming the icon; the slider itself stays live.
-- The whole item hides on hardware that does not support night light.
-
-It writes the stock GNOME keys (`night-light-temperature` and
-`night-light-enabled` in `org.gnome.settings-daemon.plugins.color`), the same
-ones Settings -> Displays uses. Changes made here show up there and vice versa.
+- Adjust the slider to warm or cool the screen.
+- Click the icon to toggle night light on and off. Dragging while night light is off turns it back on.
+- Hides on hardware that does not support night light.
 
 ## Requirements
 
@@ -51,7 +43,8 @@ dbus-run-session -- gnome-shell --nested --wayland
 
 Placing the slider under Brightness requires private shell internals
 (`quickSettings._brightness`, `menu._grid`, `_indicators`). These are not
-stable API, so a major GNOME Shell release may well need a fix here.
+stable API, so a major GNOME Shell release may well need a fix here. The
+slider widget itself uses only public API.
 
 ## License
 
