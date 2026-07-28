@@ -13,11 +13,14 @@ Settings -> Displays -> Night Light -> you are finally at the slider.
 
 - Adjust the slider to warm or cool the screen.
 - Click the icon to toggle night light on and off. Dragging while night light is off turns it back on.
+- Dragging always shows the effect, even when the schedule has night light off
+  for now -- otherwise adjusting it during the day would appear to do nothing.
 - Hides on hardware that does not support night light.
 
 ## Requirements
 
-GNOME Shell 50. The shell refuses to load the extension on anything else.
+GNOME Shell 48, 49 or 50. The shell refuses to load the extension on anything
+outside the `shell-version` list in `metadata.json`.
 
 ## Install
 
@@ -102,10 +105,21 @@ session.
 
 ## Compatibility
 
-Placing the slider under Brightness requires private shell internals
-(`quickSettings._brightness`, `menu._grid`, `_indicators`). These are not
-stable API, so a major GNOME Shell release may well need a fix here. The
-slider widget itself uses only public API.
+The slider gets into the menu through `addExternalIndicator()`, which is the
+supported entry point, and the widget itself uses only public API.
+
+Moving it from there to just under Brightness is the one part that reaches into
+private internals (`quickSettings._brightness`, `menu._grid`). That step is
+best effort: it checks that the brightness item is really in the grid, and if
+anything does not line up the slider simply stays where
+`addExternalIndicator()` put it, which is the slot external items are meant to
+occupy anyway. So a shell release that renames those can move the slider, but
+it will not break it.
+
+Every API used is present unchanged in GNOME Shell 45 through 50, including
+`NightLightPreview` on gnome-settings-daemon's colour interface. The declared
+`shell-version` is narrower than that on purpose -- it lists what has actually
+been exercised, not everything that should work.
 
 ## License
 
