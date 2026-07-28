@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.nightlight-slider"
+          path="/org/gnome/shell/extensions/nightlight-slider/">
+    <key name="icon-on" type="s">
+      <default>'weather-clear-night-symbolic'</default>
+      <summary>Slider icon while night light is on</summary>
+      <description>Any symbolic icon name from the active icon theme.</description>
+    </key>
+    <key name="icon-off" type="s">
+      <default>'weather-clear-night-symbolic'</default>
+      <summary>Slider icon while night light is off</summary>
+      <description>Any symbolic icon name from the active icon theme. Defaults to
+      the same icon as icon-on, since the off state is shown by dimming; set it
+      to something like night-light-disabled-symbolic to also change the glyph.</description>
+    </key>
+  </schema>
+</schemalist>
