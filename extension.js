@@ -56,6 +56,9 @@ const COLOR_IFACE = `
 // duration it uses.
 const PREVIEW_SECONDS = 5;
 
+// Upper bound on how often a drag is allowed to write. 10Hz still looks smooth.
+const WRITE_INTERVAL_MS = 100;
+
 const NightLightSlider = GObject.registerClass(
 class NightLightSlider extends QuickSlider {
     _init() {
@@ -114,6 +117,12 @@ class NightLightSlider extends QuickSlider {
     }
 
     _syncSlider() {
+        // While a drag is being throttled the key trails the handle, so acting
+        // on a change here would drag the handle back to a value the user has
+        // already moved past. The drag wins; the final write reconciles them.
+        if (this._throttleId)
+            return;
+
         const kelvin = this._settings.get_uint(TEMP_KEY);
         if (this._toKelvin(this.slider.value) === kelvin)
             return;
@@ -128,10 +137,32 @@ class NightLightSlider extends QuickSlider {
             ? ICON_ON : ICON_OFF;
     }
 
+    // A drag emits a notify::value per motion event -- around 60 for one sweep
+    // of the bar. Writing each one rewrites the dconf database and broadcasts
+    // changed:: to every listener on the schema. Write on the first movement so
+    // the response is immediate, then at most once per interval, and always
+    // flush the value the drag came to rest on.
     _onSliderChanged() {
         if (this._blockWrite)
             return;
 
+        if (this._throttleId) {
+            this._pendingWrite = true;
+            return;
+        }
+
+        this._write();
+        this._throttleId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, WRITE_INTERVAL_MS, () => {
+            this._throttleId = null;
+            if (this._pendingWrite) {
+                this._pendingWrite = false;
+                this._onSliderChanged();
+            }
+            return GLib.SOURCE_REMOVE;
+        });
+    }
+
+    _write() {
         if (!this._settings.get_boolean(ENABLED_KEY))
             this._settings.set_boolean(ENABLED_KEY, true);
 
@@ -141,6 +172,11 @@ class NightLightSlider extends QuickSlider {
     }
 
     destroy() {
+        if (this._throttleId)
+            GLib.source_remove(this._throttleId);
+        this._throttleId = null;
+        this._pendingWrite = false;
+
         this._supportedBinding?.unbind();
         this._supportedBinding = null;
 
